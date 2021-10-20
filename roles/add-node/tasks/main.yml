@@ -1,0 +1,51 @@
+---
+# IP address of the hostname from inventory {{ hostvars[host]['ansible_eth0']['ipv4']['address'] }}
+
+- name: add nodes hostnames to the running cluster
+  shell:  /opt/couchbase/bin/couchbase-cli server-add --cluster cb-cluster.lab.example.com:8091 -u msalah -p Gayar_2021 --server-add http://{{ inventory_hostname }}  --server-add-username devops --server-add-password devops  --services=data,index,query,fts 
+  when: inventory_hostname in groups['couchbase-nodes']
+  tags:
+    - addnode
+
+- name: listing the current cluster nodes
+  shell: /opt/couchbase/bin/couchbase-cli server-list -c cb-cluster.lab.example.com:8091 --user msalah --password Gayar_2021
+  register: cluster_nodes_list
+  tags:
+    - addnode
+
+- name: display couchbase cluster nodes 
+  debug:
+    var: cluster_nodes_list.stdout_lines
+  when:  inventory_hostname in groups['couchbase-main']
+  tags:
+    - addnode
+
+- name: configure cluster name
+  shell: /opt/couchbase/bin/couchbase-cli setting-cluster -c  cb-cluster.lab.example.com --user msalah --password Gayar_2021 --cluster-name mycb-cluster-msalah
+  register: cluster_name
+  tags:
+    - addnode
+
+#- name: reteriving nodes info
+#  shell: /opt/couchbase/bin/couchbase-cli server-info  -c  cb-cluster.lab.example.com --user msalah --password Gayar_2021
+#  register: nodes_info
+#  tags:
+#    - addnode
+
+#- name: displaying cluster nodes information  
+#  debug:
+#   msg: "{{ nodes_info.stdout }}"
+#  tags:
+#    - addnode
+
+- name: Rebalance the cluster
+  shell: /opt/couchbase/bin/couchbase-cli rebalance -c {{ inventory_hostname }}:8091 -u msalah -p Gayar_2021
+  when: inventory_hostname in groups['couchbase-main']
+  tags:
+    - addnode
+
+- name: create bucket devops-pegb with 2 replicas 
+  shell: /opt/couchbase/bin/couchbase-cli bucket-create -c cb-cluster.lab.example.com --bucket=devops-pegb --bucket-type=couchbase --bucket-port=11211 --bucket-ramsize=256 --bucket-replica=2 -u msalah -p Gayar_2021
+  tags:
+    - addnode
+  when:  inventory_hostname in groups['couchbase-main']

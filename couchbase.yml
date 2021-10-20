@@ -1,0 +1,9 @@
+---
+- name: Couchbase Installation
+  hosts: all
+  ignore_errors: true
+  become: true
+  roles:
+    - cluster-deploy      
+    - add-node
+    - remove

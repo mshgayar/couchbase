@@ -1,0 +1,51 @@
+---
+- name: install required packages
+  yum:
+    name:
+      - httpd-tools
+      - wget
+      - vim
+      - bash-completion
+      - firewalld
+      - bind-utils
+      - git
+      - nano
+    state: present
+  tags:
+    - deploy
+
+- name: Set nofile limits /etc/security/limits.conf
+  blockinfile:
+    dest:  /etc/security/limits.conf
+    block: |
+      * soft nofile 75000
+      * hard nofile 75000
+  tags:
+    - deploy
+
+- name: Set swappiness to 1
+  sysctl: name=vm.swappiness value=1 state=present ignoreerrors=yes
+  tags:
+    - deploy
+
+- name: disable Transparent Huge Pages untill reboot
+  shell: echo never > /sys/kernel/mm/transparent_hugepage/enabled && echo never > /sys/kernel/mm/transparent_hugepage/defrag
+  ignore_errors: true
+  tags:
+    - deploy
+
+- name: download Couchbase package
+  get_url: url=https://packages.couchbase.com/releases/4.6.4/couchbase-server-enterprise-4.6.4-centos7.x86_64.rpm dest=~/
+  tags:
+    - deploy
+
+- name: Install Couchbase .rpm file on all machines if its not already installed 
+  shell: rpm -i ~/couchbase-server-enterprise-4.6.4-centos7.x86_64.rpm
+  tags:
+    - deploy
+
+- name: Initialize the Cluster & Configure main node
+  shell: /opt/couchbase/bin/couchbase-cli cluster-init -c cb-cluster.lab.example.com:8091  --cluster-init-username=msalah --cluster-init-password=Gayar_2021 --cluster-init-port=8091 --cluster-init-ramsize=512  
+  when: inventory_hostname in groups['couchbase-main']
+  tags:
+    - deploy

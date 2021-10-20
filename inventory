@@ -1,0 +1,19 @@
+[couchbase-main]
+cb-cluster.lab.example.com
+
+[couchbase-nodes]
+cb-node01.lab.example.com 
+cb-node02.lab.example.com 
+
+
+
+
+[cb:children]
+couchbase-main
+couchbase-nodes
+
+[cb:vars]
+ansible_ssh_user=centos
+ansible_become=true
+ansible_ssh_private_key_file=~/.ssh/cloud-key
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'

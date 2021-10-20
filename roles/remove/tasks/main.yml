@@ -1,0 +1,14 @@
+---
+- name: Uninstall Couchbase
+  shell: rpm -e couchbase-server-4.6.4-4590.x86_64
+  tags:
+    - remove
+
+- name: Delete files (just to have a fresh install)
+  file: path=/opt/couchbase/ state=absent
+  tags:
+    - remove
+
+    
+    
+    
