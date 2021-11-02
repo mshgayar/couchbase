@@ -89,3 +89,49 @@ Couchbase Cluster Uninstall
 -
      -  Uninstall the Couchbase server and delete all files (Warning you will lose your data)
      -  ansible-playbook -i inventory couchbase.yml -t remove
+
+## Run Locally
+
+Clone the project
+
+```bash
+  git clone https://github.com/mshgayar/couchbase.git
+```
+
+Go to the project directory
+
+```bash
+  cd couchbase
+```
+
+Update Invenotry file with the cluster hostnames
+```
+# vim inventory
+ [couchbase-main]
+ cb-cluster.lab.example.com
+
+ [couchbase-nodes]
+ cb-node01.lab.example.com
+ cb-node02.lab.example.com
+
+ [cb:children]
+ couchbase-main
+ couchbase-nodes
+
+ [cb:vars]
+ ansible_ssh_user=centos
+ ansible_become=true
+ ansible_ssh_private_key_file=~/.ssh/cloud-key
+ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+```
+
+Update the global vars : 
+```
+# vim group_vars/all
+```
+
+install the cluster with ansible playbook
+
+```bash
+  ansible-playbook -i inventory couchbase.yml -t "deploy,addnode"
+```
