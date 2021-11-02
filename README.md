@@ -57,7 +57,7 @@ Installation Prerequesites
           in the ./group_vars/all file or assign them directly from the role sections.
         - ansible-playbook -i inventory  couchbase.yml -t "deploy,addnode"
 *    Step 3 : Access the cluster 
-        - from your browser : https://Main Node Hostname/IP:8091
+        - from your browser : https://MainNodeHostname/IP:8091
         - login with cluster Username and Password
 
 
