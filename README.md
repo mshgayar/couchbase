@@ -14,9 +14,9 @@ Installation Prerequesites
 * From your Linux Control Machine(Your PC) , create ssh key and copy the public key to the three nodes
 * confrim access to all nodes
 * configure hostnames through your own DNS or /etc/hosts
-  192.168.35.157   cb-cluster.lab.example.com cb-cluster
-  192.168.35.142  cb-node01.lab.example.com cb-node01
-  192.168.35.139  cb-node02.lab.example.com cb-node02   
+ * 192.168.35.157   cb-cluster.lab.example.com cb-cluster
+ * 192.168.35.142  cb-node01.lab.example.com cb-node01
+ * 192.168.35.139  cb-node02.lab.example.com cb-node02   
 
 Install Couchbase Cluster
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -39,9 +39,11 @@ ansible_ssh_private_key_file=Path to the private ssh key to access all the nodes
 ansible_ssh_common_args='-o StrictHostKeyChecking=no' 
 
 This file contains 2 groups of server and ssh access variables:
-[couchbase-main] : select one of your server, this one will be used to initialize and configure the cluster.
+[couchbase-main] 
+select one of your server, this one will be used to initialize and configure the cluster.
                  cb-cluster.lab.example.com 
-[couchbase-nodes] : all other nodes that will be added to the cluster.
+[couchbase-nodes] 
+all other nodes that will be added to the cluster.
                  cb-node01.lab.example.com
                  cb-node02.lab.example.com
 [cb:vars]
