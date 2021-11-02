@@ -10,7 +10,8 @@ The current installation has been implemented based on
 Installation Prerequesites
 -
 - Three Virtul Machines installed with Centos 7 
-- From your Linux Control Machine(Your PC) , create ssh key and copy the public key to the three nodes
+- From your Linux Control Machine(Your PC) 
+- create ssh key and copy the public key to the three nodes
 - confrim access to all nodes
 - configure hostnames through your own DNS or /etc/hosts :
 ```
@@ -28,11 +29,7 @@ Installation Prerequesites
    *   Step 1 : Configure Ansible inventory file "inventory"
 
 ```bash
-# vim inventory
-
-#This file contains 2 groups of couchbase server & couchbase nodes
-and ssh access variables
-
+#This file contains 2 groups of couchbase server & couchbase nodes and ssh access variables
 #select one of your server, this one will be used to initialize and configure the cluster
   [couchbase-main]
     cb-cluster.lab.example.com
@@ -45,11 +42,6 @@ and ssh access variables
   [cb:children] 
     couchbase-main
     couchbase-nodes
-
-# Description of vars section
-# - ssh username to access all the nodes & install packages
-# - Path of ssh private key required to access nodes
-# - Option to avoid displaying ssh access confirmation
 
   [cb:vars]
     ansible_ssh_user="Your Own SSH User"
