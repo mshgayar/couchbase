@@ -2,6 +2,8 @@
 # Couchbase Ansible Playbook
 This project contains sample playbooks to manage Couchbase cluster.
 
+## 🔗 Links
+[![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com//in/mosalah90/)
 
 The current installation has been implemented based on 
   * Centos 7 
