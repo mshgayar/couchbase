@@ -1,6 +1,6 @@
 
 # Couchbase Ansible Playbook
-This project contains sample playbooks to manage Couchbase cluster.
+This project contains sample playbooks to manage Couchbase NOSQL cluster.
 
 ## 🔗 Links
 [![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com//in/mosalah90/)
@@ -11,7 +11,7 @@ The current installation has been implemented based on
 
 Installation Pre-Requisties
 -
-- Three Virtual Machines installed with Centos 7 
+- Three Virtual Machines installed with Centos 7
 - From your Linux Control Machine(Your PC)
 - Create ssh key and copy the public key to the three nodes
 - Confirm access to all nodes
