@@ -5,17 +5,17 @@ This project contains sample playbooks to manage Couchbase cluster.
 ## 🔗 Links
 [![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com//in/mosalah90/)
 
-The current installation has been implemented based on 
-  * Centos 7 
+The current installation has been implemented based on
+  * Centos 7
   * Couchbase version   couchbase-server-enterprise-4.6.4-centos7.x86_64.rpm
 
-Installation Prerequesites
+Installation Pre-Requisties
 -
-- Three Virtul Machines installed with Centos 7 
-- From your Linux Control Machine(Your PC) 
-- create ssh key and copy the public key to the three nodes
-- confrim access to all nodes
-- configure hostnames through your own DNS or /etc/hosts :
+- Three Virtual Machines installed with Centos 7 
+- From your Linux Control Machine(Your PC)
+- Create ssh key and copy the public key to the three nodes
+- Confirm access to all nodes
+- Configure hostnames through your own DNS or /etc/hosts :
 ```
   * 192.168.35.157  cb-cluster.lab.example.com cb-cluster
   * 192.168.35.142  cb-node01.lab.example.com cb-node01
@@ -23,7 +23,7 @@ Installation Prerequesites
 ```
 
 
- 
+
 
 
 ## Couchbase Cluster Deployment
@@ -41,7 +41,7 @@ Installation Prerequesites
     cb-node01.lab.example.com
     cb-node02.lab.example.com
 
-  [cb:children] 
+  [cb:children]
     couchbase-main
     couchbase-nodes
 
@@ -53,10 +53,10 @@ Installation Prerequesites
 ```
 
 *    Step 2 : Installing Cluster with Ansible Playbook roles
-        - Enter the Administrator information and server configuration (RAM Quotas, Bucket name, Replicas) 
+        - Enter the Administrator information and server configuration (RAM Quotas, Bucket name, Replicas)
           in the ./group_vars/all file or assign them directly from the role sections.
         - ansible-playbook -i inventory  couchbase.yml -t "deploy,addnode"
-*    Step 3 : Access the cluster 
+*    Step 3 : Access the cluster
         - from your browser : https://MainNodeHostname/IP:8091
         - login with cluster Username and Password
 
@@ -75,7 +75,7 @@ Ansible Role "deploy" Tasks :-
       * Create a new cluster on the "main" node :
           -   cb-cluster.lab.example.com
 
-Ansible Role "addnode" Tasks :_ 
+Ansible Role "addnode" Tasks :_
    -
        * Adding all other nodes to the cluster
        * listing the current cluster nodes
@@ -83,7 +83,7 @@ Ansible Role "addnode" Tasks :_
        * configuring couchbase cluster name
        * displaying cluster nodes information
        * Rebalancing the cluster after the added nodes registration
-       * Creating a new bucket 
+       * Creating a new bucket
 
 
 Couchbase Cluster Uninstall
@@ -126,7 +126,7 @@ Update Invenotry file with the cluster hostnames
  ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 ```
 
-Update the global vars : 
+Update the global vars :
 ```
 # vim group_vars/all
 ```
