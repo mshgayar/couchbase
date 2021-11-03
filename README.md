@@ -23,9 +23,6 @@ Installation Pre-Requisties
 ```
 
 
-
-
-
 ## Couchbase Cluster Deployment
 
    *   Step 1 : Configure Ansible inventory file "inventory"
