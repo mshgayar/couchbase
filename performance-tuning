@@ -1,0 +1,116 @@
+########################## Couhcbase NoSQL - Performance Tuning
+
+1) Memory Allocation 
+
+a) vm.swappiness
+The Linux kernel parameter, vm.swappiness, is a value from 0-100 that controls the swapping of application data (as anonymous pages) from physical memory to virtual memory on disk. You can set the value of the vm.swappiness parameter for minimum swapping.
+
+ The higher the parameter value, the more aggressively inactive processes are swapped out from physical memory. The lower the value, the less they are swapped, forcing filesystem buffers to be emptied. 
+
+On most systems, vm.swappiness is set to 60 by default, which in not recommended with Database/Big Data applications
+
+If you are running linux kernel version 3.4 and lower then vm.sawppiness=0 , but if linux kernel is higher than 3.4 then vm.swappiness=1
+
+In Couchbase Tuning : swappiness must be disabled to use the phyiscal memory and prevent swapping between disk and memory
+
+
+To view your current setting for vm.swappiness, run:
+# cat /proc/sys/vm/swappiness
+
+To set vm.swappiness to 1, run:
+# sudo sysctl -w vm.swappiness=1
+
+
+
+
+b) Transpaent Huge Pages THP 
+Transparent Huge Pages (THP) is a Linux memory management system that reduces the overhead of Translation Lookaside Buffer (TLB) lookups on machines with large amounts of memory by using larger memory pages.
+
+However, database workloads often perform poorly with THP enabled, because they tend to have sparse rather than contiguous memory access patterns. When running Couchbase NOSQL on Linux, THP should be disabled for best performance.
+
+In Linux operating systems, huge pages is a feature that provides a way for the CPU and OS to create pre-allocated contiguous memory space, and which is designed to improve application performance. Transparent huge pages (THP) is a Linux OS feature that automates the creation of contiguous memory space, and conceals much of the complexity of using actual huge pages on systems with large amounts of memory.
+
+Hugepages is a feature that allows the Linux kernel to utilize the multiple page size capabilities of modern hardware architectures. Linux creates multiple pages of virtual memory, mapped from both physical RAM and swap. A page is the basic unit of virtual memory, with the default page size being 4096 Bytes in the x86 architecture.
+
+
+Linux uses a mechanism in the CPU architecture called "Translation Lookaside Buffers" (TLB) to manage the mapping of virtual memory pages to actual physical memory addresses. The TLB is a limited hardware resource, so utilizing a huge amount of physical memory with the default page size consumes the TLB and adds processing overhead - many pages of size 4096 Bytes equates to many TLB resources consumed. By utilizing Huge Pages, we are able to create pages of much larger sizes, each page consuming a single resource in the TLB. A side effect of creating Huge Pages is that the physical memory that is mapped to a Huge Page is no longer subject to normal memory allocations or managed by the kernel virtual memory manager, so Huge Pages are essentially 'protected' and are available only to applications that request them. Huge Pages are 'pinned' to physical RAM and cannot be swapped/paged out
+
+
+Transparent Huge Pages (THP) are enabled by default in RHEL 6 for all applications. The kernel attempts to allocate hugepages whenever possible and any Linux process will receive 2MB pages if the mmap region is 2MB naturally aligned. The main kernel address space itself is mapped with hugepages, reducing TLB pressure from kernel code
+
+The kernel will always attempt to satisfy a memory allocation using hugepages. If no hugepages are available (due to non availability of physically continuous memory for example) the kernel will fall back to the regular 4KB pages. THP are also swappable (unlike hugetlbfs). This is achieved by breaking the huge page to smaller 4KB pages, which are then swapped out normally.
+
+
+
+
+From Red Hat document :-
+
+Transparent Huge Pages (THP) is an alternative solution to HugeTLB. With THP, the kernel automatically assigns huge pages to processes, so huge pages do not need to be reserved manually.
+The THP feature has two modes of operation: system-wide and per-process.
+
+ When THP is enabled system-wide, the kernel tries to assign huge pages to any process when it is possible to allocate huge pages and the process is using a large contiguous virtual memory area.
+ 
+If THP is enabled per-process, the kernel only assigns huge pages to individual processes' memory areas specified with the madvise() system call.
+Note that the THP feature only supports 2-MB pages. Transparent huge pages are enabled by default. To check the current status, run: 
+# cat /sys/kernel/mm/transparent_hugepage/enabled
+#
+#  To enable transparent huge pages, run:
+# echo always > /sys/kernel/mm/transparent_hugepage/enabled
+#
+
+To prevent applications from allocating more memory resources than necessary, you can disable huge pages system-wide and only enable them inside MADV_HUGEPAGE madvise regions by running: 
+# echo madvise > /sys/kernel/mm/transparent_hugepage/enabled
+
+ To disable transparent huge pages, run: 
+# echo never > /sys/kernel/mm/transparent_hugepage/enabled
+
+ Sometimes, providing low latency to short-lived allocations has higher priority than immediately achieving the best performance with long-lived allocations. In such cases, direct compaction can be disabled while leaving THP enabled.
+Direct compaction is a synchronous memory compaction during the huge page allocation. Disabling direct compaction provides no guarantee of saving memory, but can decrease the risk of higher latencies during frequent page faults. Note that if the workload benefits significantly from THP, the performance decreases. To disable direct compaction, run: 
+# echo madvise > /sys/kernel/mm/transparent_hugepage/defrag
+
+
+
+To disbale the Transparent Huge Pages THP 
+
+Permanently)
+add or modify the transparent_hugepage=never parameter in the /etc/default/grub file:
+	transparent_hugepage=never
+For example 
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR="$(sed 's, release .*$,,g' /etc/system-release)"
+GRUB_DEFAULT=saved
+GRUB_DISABLE_SUBMENU=true
+GRUB_TERMINAL_OUTPUT="console"
+GRUB_CMDLINE_LINUX="crashkernel=auto rhgb quiet numa=off transparent_hugepage=never"
+GRUB_DISABLE_RECOVERY="true"
+
+Run the grub2–mkconfig command to regenerate the grub.cfg file. 
+	# grub2-mkconfig -o /boot/grub2/grub.cfg
+
+Restart the system to make the changes permanent.
+
+
+Temporarily On Fly )
+# echo never > /sys/kernel/mm/transparent_hugepage/enabled
+# echo never > /sys/kernel/mm/transparent_hugepage/defrag
+
+
+if the value of HugePages_Total is "0" it means HugePages is disabled on the system.
+# grep -i HugePages_Total /proc/meminfo 
+HugePages_Total:       0
+
+# cat /proc/sys/vm/nr_hugepages 
+0
+# sysctl vm.nr_hugepages
+vm.nr_hugepages = 0
+
+
+
+
+
+
+
+
+
+
+ 

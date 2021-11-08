@@ -1,0 +1,128 @@
+-----------------------------------------------------------------------------------------------
+Couchbase is the merge of two popular NOSQL technologies: 
+
+    Membase, which provides persistence, replication, sharding to the high performance memcached technology
+    CouchDB, which pioneers the document oriented model based on JSON
+
+Both Membase and CouchDB are built from the ground up on a highly distributed architecture, with data shard across machines in a cluster. 
+
+Membase provides an easy migration to existing Memcached users who want to add persistence, sharding and fault resilience on their familiar Memcached model.
+
+On the other hand, CouchDB provides first class support for storing JSON documents as well as a simple RESTful API to access them.  Underneath, CouchDB also has a highly tuned storage engine that is optimized for both update transaction as well as query processing.
+Taking the best of both technologies, Membase is well-positioned in the NOSQL marketplace.
+
+#Read and Write
+For read, Couchbase provides a key-based lookup mechanism where the client is expected to provide the key, and only the server hosting the data (with that key) will be contacted.
+
+Couchbase also provides a query mechanism to retrieve data where the client provides a query.
+The query will be broadcasted to all servers in the cluster and the result will be merged and sent back to the client.
+
+For write, Couchbase provides a key-based update mechanism where the client sends in an updated document with the key (as doc id).  
+When handling write request, the server will return to client’s write request as soon as the data is stored in RAM on the active server, which offers the lowest latency for write requests.
+
+
+
+-------------------------------------------------------------------------------------------------
+ Transaction Model
+Similar to many NOSQL databases,transaction model is primitive as compared to RDBMS.
+
+Atomicity is guaranteed at a single document and transactions that span update of multiple documents are unsupported.
+To provide necessary isolation for concurrent access, Couchbase provides a CAS (compare and swap) mechanism which works as
+
+    When the client retrieves a document, a CAS ID (equivalent to a revision number) is attached to it.
+    While the client is manipulating the retrieved document locally, another client may modify this document.  When this happens, the CAS ID of the document at the server will be incremented.
+    Now, when the original client submits its modification to the server, it can attach the original  CAS ID in its request.  The server will verify this ID with the actual ID in the server.  If they differ, the document has been updated in between and the server will not apply the update.
+    The original client will re-read the document (which now has a newer ID) and re-submit its modification.  
+
+Couchbase also provides a locking mechanism for clients to coordinate their access to documents.  Clients can request a LOCK on the document it intends to modify, update the documents and then releases the LOCK.  To prevent a deadlock situation, each LOCK grant has a timeout so it will automatically be released after a period of time.
+
+
+
+-------------------------------------------------------------------------------------------------
+ Deployment Architecture
+Couchbase DB resides in a server clusters involving multiple machines. 
+Client library will connect to the appropriate servers to access the data.
+Each machine contains a number of daemon processes which provides data access as well as management functions.
+
+The data server, written in C/C++, is responsible to handle get/set/delete request from client.  
+The Management server, written in Erlang, is responsible to handle the query traffic from client, manage the configuration and communicate with other member nodes in the cluster.
+
+
+ Virtual Buckets
+The basic unit of data storage in Couchbase DB is a JSON document  which is associated with a key.  
+The overall key space is partitioned into 1024 logical storage unit called "virtual buckets" (or vBucket).  
+vBucket are distributed across machines within the cluster via a map that is shared among servers in the cluster as well as the client library.
+
+
+
+High availability is achieved through data replication at the vBucket level.  
+Currently Couchbase supports one active vBucket zero or more standby replicas hosted in other machines.  
+Currently the standby server are idle and not serving any client request.  
+In future version of Couchbase, the standby replica will be able to serve read request.
+
+
+Load balancing in Couchbase is achieved as follows:
+
+    Keys are uniformly distributed based on the hash function
+    When machines are added and removed in the cluster.  The administrator can request a redistribution of vBucket so that data are evenly spread across physical machines.
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+Management Server
+performs the management function and co-ordinate the other nodes within the cluster.  
+
+It includes the following monitoring and administration functions
+
+	Heartbeat: A watchdog process periodically communicates with all member nodes within the same cluster to provide Couchbase Server health updates.
+	
+	Process monitor: This subsystem monitors execution of the local data manager, restarting failed processes as required and provide status information to the heartbeat module.
+
+	Configuration manager: Each Couchbase Server node shares a cluster-wide configuration which contains the member nodes within the cluster, a vBucket map.  The configuration manager pull this config from other member nodes at bootup time.
+
+	Controls the distribution of vBuckets among other nodes and initiate vBucket migration
+    	Orchestrates the failover and update the configuration manager of member nodes
+
+	If the leader node crashes, a new leader will be elected from surviving members in the cluster.
+
+
+To compute the vBucket map and migration plan, the leader attempts the following objectives:
+
+    Evenly distribute the number of active vBuckets and replica vBuckets among member nodes.
+    Place the active copy and each replicas in physically separated nodes.
+    Spread the replica vBucket as wide as possible among other member nodes.
+    Minimize the amount of data migration
+    Orchestrate the steps of replica redistribution so no node or network will be overwhelmed by the replica migration. 
+
+Once the vBucket maps is determined, the leader will pass the redistribution map to each member in the cluster and coordinate the steps of vBucket migration.  The actual data transfer happens directly between the origination node to the destination node.
+
+Notice that since we have generally more vBuckets than machines.  The workload of migration will be evenly distributed automatically.  For example, when new machines are added into the clusters, all existing machines will migrate some portion of its vBucket to the new machines.  There is no single bottleneck in the cluster.
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+ Data Server
+implements the memcached APIs such as get, set, delete, append, prepend, etc. It contains the following key datastructure:
+
+One in-memory hashtable (key by doc id) for the corresponding vBucket hosted.  
+	The hashtable acts as both a metadata for all documents as well as a cache for the document content.  Maintain the entry gives a quick way to detect whether the document exists on disk.
+	 To support async write, there is a checkpoint linkedlist per vBucket holding the doc id of modified documents that hasn't been flushed to disk or replicated to the replica.
+
+
+CouchDB Storage Structure
+Data server defines an interface where different storage structure can be plugged-in.  Currently it supports both a SQLite DB as well as CouchDB.  Here we describe the details of CouchDb, which provides a super high performance storage mechanism underneath the Couchbase technology.
+
+Under the CouchDB structure, there will be one file per vBucket.  Data are written to this file in an append-only manner, which enables Couchbase to do mostly sequential writes for update, and provide the most optimized access patterns for disk I/O.  This unique storage structure attributes to Couchbase’s fast on-disk performance for write-intensive applications.
+
+
+
+
+-----------------------------------------------------------------------------------------------------------------------
+Couchbase is one of the popular NOSQL technology built on a solid technology foundation designed for high performance.  In this post, we have examined a number of such key features:
+
+    Load balancing between servers inside a cluster that can grow and shrink according to workload conditions.  Data migration can be used to re-achieve workload balance.
+    Asynchronous write provides lowest possible latency to client as it returns once the data is store in memory.
+    Append-only update model pushes most update transaction into sequential disk access, hence provide extremely high throughput for write intensive applications.
+    Automatic compaction ensures the data lay out on disk are kept optimized all the time.
+    Map function can be used to pre-compute view index to enable query access.  Summary data can be pre-aggregated using the reduce function.  Overall, this cut down the workload of query processing dramatically.
